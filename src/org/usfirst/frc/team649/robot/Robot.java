@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import org.usfirst.frc.team649.robot.commands.Drive;
+import org.usfirst.frc.team649.robot.commands.DriveForwardRotate;
 import org.usfirst.frc.team649.robot.subsystems.DrivetrainSubsystem;
 
 /**
@@ -44,6 +45,9 @@ public class Robot extends IterativeRobot {
 	private boolean prevState6Button;
 	private boolean prevState4Button;
 	
+	public static double INCREMENT = 0.001;
+	public static boolean isPIDActive = false;
+	
    public void robotInit() {
 	drivetrain = new DrivetrainSubsystem();
 	
@@ -65,70 +69,85 @@ public class Robot extends IterativeRobot {
    	right = new DoubleSolenoid(4,5);
    }
    
+   public void disabledPeriodic() {
+		Scheduler.getInstance().run();
+	}
    
    /**
     * This function is called periodically during autonomous
     */
    public void autonomousPeriodic() {
-
+	   Scheduler.getInstance().run();
+	   
    }
 
+   public void teleopInit(){
+	   drivetrain.resetEncoders();
+   }
    /**
     * This function is called periodically during operator control
     */
    public void teleopPeriodic() {
-   	shift = driverRightJoystick.getRawButton(1) || driverLeftJoystick.getRawButton(1);
-   	drivetrain.driveFwdRot(getDriveForward(), getDriveRotation());
-   	shiftDriveGear(shift);
-   	Command d;
-   	
-   	if (manualJoystick.getRawButton(1) && !prevState1Button){
-    	d = new Drive(10);
-    	d.start();
-    }
-    else if (manualJoystick.getRawButton(2) && !prevState2Button){
-    	d = new Drive(-10);
-    	d.start();
-    }
-    
-    //set PID
-    //on GAMEPAD: P:LB, I:RB, D:Y-button
-    //			DECREASE^^ by simultaneously holding X button
-    if(manualJoystick.getRawButton(5) && !prevState5Button){
-    	p_value+= (manualJoystick.getRawButton(3)? -0.1 : 0.1);
-    }
-    if(manualJoystick.getRawButton(6) && !prevState6Button){
-    	i_value+= (manualJoystick.getRawButton(3)? -0.1 : 0.1);
-    }
-    if(manualJoystick.getRawButton(4) && !prevState4Button){
-    	d_value+= (manualJoystick.getRawButton(3)? -0.1 : 0.1);
-    }
-    
-    //check to make sure none are under 0
-    if (p_value < 0) p_value=0;
-    if (i_value < 0) i_value=0;
-    if (d_value < 0) d_value=0;
-    
-    //update PID
-    drivetrain.getPIDController().setPID(p_value, i_value, d_value);
-    
-    prevState1Button = manualJoystick.getRawButton(1);
-    prevState2Button = manualJoystick.getRawButton(2);
-    prevState5Button = manualJoystick.getRawButton(5);
-    prevState6Button = manualJoystick.getRawButton(6);
-    prevState4Button = manualJoystick.getRawButton(4);
-   	
-    SmartDashboard.putNumber("P", p_value); 
-    SmartDashboard.putNumber("I", i_value);
-    SmartDashboard.putNumber("D", d_value);
-   	SmartDashboard.putData("Encoder Right", drivetrain.encoders[0]);
+	   Scheduler.getInstance().run();
+	   
+	   shift = driverRightJoystick.getRawButton(1) || driverLeftJoystick.getRawButton(1);
+	   if (!isPIDActive){
+		   new DriveForwardRotate(getDriveForward(), getDriveRotation()).start();
+	   }
+	   shiftDriveGear(shift);
+	   
+	   Command d;
+	   
+	   if (manualJoystick.getRawButton(1) && !prevState1Button){
+		   d = new Drive(30);
+		   d.start();
+	   }
+	   else if (manualJoystick.getRawButton(2) && !prevState2Button){
+		   d = new Drive(-30);
+		   d.start();
+	   }
+	   
+	   //set PID
+	   //on GAMEPAD: P:LB, I:RB, D:Y-button
+	   //			DECREASE^^ by simultaneously holding X button
+	   if(manualJoystick.getRawButton(5) && !prevState5Button){
+		   p_value+= (manualJoystick.getRawButton(3)? -INCREMENT : INCREMENT);
+	   }
+	   if(manualJoystick.getRawButton(6) && !prevState6Button){
+		   i_value+= (manualJoystick.getRawButton(3)? -INCREMENT : INCREMENT);
+	   }
+	   if(manualJoystick.getRawButton(4) && !prevState4Button){
+		   d_value+= (manualJoystick.getRawButton(3)? -INCREMENT : INCREMENT);
+	   }
+		
+	   //check to make sure none are under 0
+	   if (p_value < 0) p_value=0;
+	   if (i_value < 0) i_value=0;
+	   if (d_value < 0) d_value=0;
+	   
+	   //update PID
+	   drivetrain.getPIDController().setPID(p_value, i_value, d_value);
+	   
+	   prevState1Button = manualJoystick.getRawButton(1);
+	   prevState2Button = manualJoystick.getRawButton(2);
+	   prevState5Button = manualJoystick.getRawButton(5);
+	   prevState6Button = manualJoystick.getRawButton(6);
+	   prevState4Button = manualJoystick.getRawButton(4);
+	   
+	   SmartDashboard.putNumber("P", p_value); 
+	   SmartDashboard.putNumber("I", i_value);
+	   SmartDashboard.putNumber("D", d_value);
+	   SmartDashboard.putData("Encoder Left", drivetrain.encoders[0]);
+	   SmartDashboard.putData("Encoder Right", drivetrain.encoders[1]);
+	   SmartDashboard.putBoolean("Is PID Active?", isPIDActive);
    }
    
    /**
     * This function is called periodically during test mode
     */
    public void testPeriodic() {
-   
+	   Scheduler.getInstance().run();
+	  
    }
    
    public double getDriveForward() {

@@ -4,7 +4,6 @@ package org.usfirst.frc.team649.robot.subsystems;
 import org.usfirst.frc.team649.robot.RobotMap;
 
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.PIDSource;
@@ -20,12 +19,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class DrivetrainSubsystem extends PIDSubsystem {
     
     public Victor [] motors;
-    public Encoder encoder;
+    public Encoder [] encoders;
     public PIDController encoderDriveLeftPID;
+    
+    public static double DIST_PER_PULSE_LEFT = 0.78 * 7.0/30.0 / 128.0;
+    public static double DIST_PER_PULSE_RIGHT = 0.78 * 7.0/30.0 / 128.0;
+    
+    public static final double AUTO_P = 0.025;
+	public static final double AUTO_I = 0.0;
+	public static final double AUTO_D = 0.011;
     
     
     public DrivetrainSubsystem() {
-    	super("Drivetrain", 1.0, 0, 0);
+    	super("Drivetrain", AUTO_P, AUTO_I, AUTO_D);
     	motors = new Victor[4];
        	motors[0] = new Victor(0);
        	motors[1] = new Victor(9);
@@ -33,11 +39,15 @@ public class DrivetrainSubsystem extends PIDSubsystem {
        	motors[3] = new Victor(3);
        	
     	encoderDriveLeftPID = this.getPIDController();
-    	encoderDriveLeftPID.setAbsoluteTolerance(0.5);
+    	encoderDriveLeftPID.setAbsoluteTolerance(0.8);
     	//encoderDrivePID.setOutputRange(-EncoderBasedDriving.MAX_MOTOR_POWER, EncoderBasedDriving.MAX_MOTOR_POWER);
-        encoder = new Encoder(8, 9, true);
+    	encoders = new Encoder[2];
+        encoders[0] = new Encoder(6,7, true);
+        encoders[1] = new Encoder(8,9, false);
+        
 
-        encoder.setDistancePerPulse(11.0);
+        encoders[0].setDistancePerPulse(DIST_PER_PULSE_LEFT);
+        encoders[1].setDistancePerPulse(DIST_PER_PULSE_RIGHT);
         
     }
     // Put methods for controlling this subsystem
@@ -57,11 +67,11 @@ public class DrivetrainSubsystem extends PIDSubsystem {
         left /= 1.0;//left > 0 ? Math.pow(left, 2)/2 : -Math.pow(left, 2)/2;
         right /= 1.0;//right > 0 ? Math.pow(right, 2)/2 : -Math.pow(right, 2)/2;
         for (; i < motors.length / 2; i++) {
-            motors[i].set(left);
+            motors[i].set(-left);
         }
 
         for (; i < motors.length; i++) {
-            motors[i].set(-right);
+            motors[i].set(right);
         }
     }
     
@@ -73,13 +83,14 @@ public class DrivetrainSubsystem extends PIDSubsystem {
 //        }
 //        return totalVal / numEncoders;
         
-        return encoder.getDistance();
+        return encoders[0].getDistance();
     }
 
     
     
     public void resetEncoders() {
-        encoder.reset();
+        encoders[0].reset();
+        encoders[1].reset();
     }
     
 	protected double returnPIDInput() {
