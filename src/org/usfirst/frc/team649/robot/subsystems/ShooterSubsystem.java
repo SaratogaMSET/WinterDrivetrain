@@ -14,8 +14,8 @@ public class ShooterSubsystem extends Subsystem {
 	
 	public void setRollerSpeed(double speed){
 		
-		rollers[0].set(-speed);
-		rollers[1].set(speed);
+		rollers[0].set(speed);
+		rollers[1].set(-speed);
 	}
 
 	@Override
