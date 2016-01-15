@@ -14,6 +14,7 @@ import org.usfirst.frc.team649.robot.commands.DrivePIDLeft;
 import org.usfirst.frc.team649.robot.commands.DriveForwardRotate;
 import org.usfirst.frc.team649.robot.commands.DrivePIDRight;
 import org.usfirst.frc.team649.robot.subsystems.DrivetrainSubsystem;
+import org.usfirst.frc.team649.robot.subsystems.IntakeSubsystem;
 import org.usfirst.frc.team649.robot.subsystems.LeftDTPID;
 import org.usfirst.frc.team649.robot.subsystems.RightDTPID;
 import org.usfirst.frc.team649.robot.subsystems.ShooterSubsystem;
@@ -26,6 +27,9 @@ import org.usfirst.frc.team649.robot.subsystems.ShooterSubsystem;
  * directory.
  */
 public class Robot extends IterativeRobot {
+	
+	public static double DEAD_ZONE_TOLERANCE = 0.025;
+	
 	 /**
 	  * 
     * This function is run when the robot is first started up and should be
@@ -43,9 +47,10 @@ public class Robot extends IterativeRobot {
 	double d_value;
 	
 	public static DrivetrainSubsystem drivetrain;
+	public static IntakeSubsystem intake;
+	public static ShooterSubsystem shooter;
 	public static LeftDTPID leftDT;
 	public static RightDTPID rightDT;
-	public static ShooterSubsystem shooter;
 	
 	private boolean prevStateLeft6Button;
 	private boolean prevStateLeft7Button;
@@ -63,9 +68,11 @@ public class Robot extends IterativeRobot {
 	
    public void robotInit() {
 	drivetrain = new DrivetrainSubsystem();
+	shooter = new ShooterSubsystem();
+	intake = new IntakeSubsystem();
+	
 	leftDT = new LeftDTPID();
 	rightDT = new RightDTPID();
-	shooter = new ShooterSubsystem();
 	
    	driverRightJoystick = new Joystick(0);
    	driverLeftJoystick = new Joystick(1);
@@ -117,7 +124,18 @@ public class Robot extends IterativeRobot {
 	   
 	   //shooter
 	   if (operatorJoystick.getRawButton(1)){
-		   shooter.setRollerSpeed((-operatorJoystick.getThrottle() + 1.0)/2.0);
+		   shooter.setRollerSpeed(correctForDeadZone( (-operatorJoystick.getThrottle() + 1.0) / 2.0));
+	   }
+	   
+	   //intakes
+	   if (operatorJoystick.getRawButton(11)){
+		   intake.setRollerSpeed(IntakeSubsystem.INTAKE_SPEED);
+	   }
+	   else if (operatorJoystick.getRawButton(12)){
+		   intake.setRollerSpeed(IntakeSubsystem.PURGE_SPEED);
+	   }
+	   else{
+		   intake.setRollerSpeed(0);
 	   }
 	   
 	   SmartDashboard.putNumber("Throttle", -operatorJoystick.getThrottle());
@@ -208,12 +226,24 @@ public class Robot extends IterativeRobot {
 	  
    }
    
+   
+   // *******************************ADDED FUNCTIONS******************************//
+   
+   public double correctForDeadZone(double joyVal, double minTolerance){
+	   return Math.abs(joyVal) >= minTolerance ? joyVal : 0;
+   }
+   
+   //default tolerance
+   public double correctForDeadZone(double joyVal){
+	   return Math.abs(joyVal) >= DEAD_ZONE_TOLERANCE ? joyVal : 0;
+   }
+   
    public double getDriveForward() {
-       return -driverLeftJoystick.getY();
+       return correctForDeadZone(-driverLeftJoystick.getY());
    }
 
    public double getDriveRotation() {
-       final double turnVal = driverRightJoystick.getX();
+       final double turnVal = correctForDeadZone(driverRightJoystick.getX());
        final double sign = turnVal < 0 ? -1 : 1;
        return Math.pow(Math.abs(turnVal), 1.4) * sign;
    }
@@ -222,6 +252,11 @@ public class Robot extends IterativeRobot {
    	//default low
        left.set(lowSpeed ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
        right.set(lowSpeed ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
+       
+       //for future implementation of shifting DT with solenoids and correcting encoders accordingly
+//       if (!lowSpeed && prevSolState){
+//    	   encoder.setDistancePerPulse(asfnsfna,s);
+//       }
 
    }
 }
