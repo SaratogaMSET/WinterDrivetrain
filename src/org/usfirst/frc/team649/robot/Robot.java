@@ -45,6 +45,7 @@ public class Robot extends IterativeRobot {
 	double p_value;
 	double i_value;
 	double d_value;
+	double powerToSet;
 	
 	public static DrivetrainSubsystem drivetrain;
 	public static IntakeSubsystem intake;
@@ -123,19 +124,23 @@ public class Robot extends IterativeRobot {
 	   shiftDriveGear(shift);
 	   
 	   //shooter
+	   powerToSet = correctForDeadZone(-operatorJoystick.getThrottle(), 0.2); //(-operatorJoystick.getThrottle() + 1.0) / 2.0);
+
 	   if (operatorJoystick.getRawButton(1)){
-		   shooter.setRollerSpeed(correctForDeadZone( (-operatorJoystick.getThrottle() + 1.0) / 2.0));
+		   shooter.setRollerSpeed(powerToSet);
+	   } else {
+		   shooter.setRollerSpeed(0);
 	   }
-	   
+	   SmartDashboard.putNumber("Setpower",powerToSet);
 	   //intakes
 	   if (operatorJoystick.getRawButton(11)){
-		   intake.setRollerSpeed(IntakeSubsystem.INTAKE_SPEED);
+		  intake.setRollerSpeed(IntakeSubsystem.INTAKE_SPEED);
 	   }
 	   else if (operatorJoystick.getRawButton(12)){
-		   intake.setRollerSpeed(IntakeSubsystem.PURGE_SPEED);
+		  intake.setRollerSpeed(IntakeSubsystem.PURGE_SPEED);
 	   }
 	   else{
-		   intake.setRollerSpeed(0);
+		  intake.setRollerSpeed(0);
 	   }
 	   
 	   SmartDashboard.putNumber("Throttle", -operatorJoystick.getThrottle());
@@ -216,6 +221,8 @@ public class Robot extends IterativeRobot {
 	   SmartDashboard.putData("Encoder Left", drivetrain.encoders[0]);
 	   SmartDashboard.putData("Encoder Right", drivetrain.encoders[1]);
 	   SmartDashboard.putBoolean("Is PID Active?", isPIDActiveLeft);
+	   
+	   //SmartDashboard.putNumber("Abs Encoder: getAverageValue()", shooter.absEncoder.getAverageValue());
    }
    
    /**
