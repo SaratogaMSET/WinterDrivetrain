@@ -13,11 +13,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import org.usfirst.frc.team649.robot.commands.DrivePIDLeft;
 import org.usfirst.frc.team649.robot.commands.DriveForwardRotate;
 import org.usfirst.frc.team649.robot.commands.DrivePIDRight;
-import org.usfirst.frc.team649.robot.subsystems.DrivetrainSubsystem;
 import org.usfirst.frc.team649.robot.subsystems.IntakeSubsystem;
-import org.usfirst.frc.team649.robot.subsystems.LeftDTPID;
-import org.usfirst.frc.team649.robot.subsystems.RightDTPID;
-import org.usfirst.frc.team649.robot.subsystems.ShooterSubsystem;
+import org.usfirst.frc.team649.robot.subsystems.drivetrain.DrivetrainSubsystem;
+import org.usfirst.frc.team649.robot.subsystems.drivetrain.LeftDTPID;
+import org.usfirst.frc.team649.robot.subsystems.drivetrain.RightDTPID;
+import org.usfirst.frc.team649.robot.subsystems.shooter.ShooterSubsystem;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -35,29 +35,32 @@ public class Robot extends IterativeRobot {
     * This function is run when the robot is first started up and should be
     * used for any initialization code.
     */
-	DoubleSolenoid left, right; //grabberPiston2;
+	
+	//Joysticks
 	Joystick driverRightJoystick;
 	Joystick driverLeftJoystick;
-	Joystick manualJoystick; 
+	Joystick drivetrainPIDTuningJoystick; 
 	Joystick operatorJoystick;
-	boolean shift;
-	//
-	double p_value;
-	double i_value;
-	double d_value;
-	double powerToSet;
+	Joystick shooterPIDTuningJoystick;
 	
+	//Drivetrain
+	boolean shift;
+	DoubleSolenoid left, right; //grabberPiston2;
+	//PID
+	double drivetrain_p_value;
+	double drivetrain_i_value;
+	double drivetrain_d_value;
+	//subsystems
 	public static DrivetrainSubsystem drivetrain;
-	public static IntakeSubsystem intake;
-	public static ShooterSubsystem shooter;
 	public static LeftDTPID leftDT;
 	public static RightDTPID rightDT;
 	
+	//prev states for joysticks
 	private boolean prevStateLeft6Button;
 	private boolean prevStateLeft7Button;
 	private boolean prevStateRight11Button;
 	private boolean prevStateRight10Button;
-	
+	//
 	private boolean prevState3Button;
 	private boolean prevState1Button;
 	private boolean prevState2Button;
@@ -65,6 +68,14 @@ public class Robot extends IterativeRobot {
 	public static double INCREMENT = 0.001;
 	public static boolean isPIDActiveLeft = false;
 	public static boolean isPIDActiveRight = false;
+	
+	
+	double powerToSet;
+	
+	
+	public IntakeSubsystem intake;
+	public static ShooterSubsystem shooter;
+	
 	
 	
    public void robotInit() {
@@ -78,11 +89,12 @@ public class Robot extends IterativeRobot {
    	driverRightJoystick = new Joystick(0);
    	driverLeftJoystick = new Joystick(1);
    	operatorJoystick = new Joystick(2);
-   	manualJoystick = new Joystick(3);
+   	drivetrainPIDTuningJoystick = new Joystick(3);
+   	shooterPIDTuningJoystick = new Joystick(4);
    	
-   	p_value = leftDT.getPIDController().getP();
-   	i_value = leftDT.getPIDController().getI();
-   	d_value = leftDT.getPIDController().getD();
+   	drivetrain_p_value = leftDT.getPIDController().getP();
+   	drivetrain_i_value = leftDT.getPIDController().getI();
+   	drivetrain_d_value = leftDT.getPIDController().getD();
    	
    	prevStateLeft6Button = false;
     prevStateLeft7Button = false;
@@ -149,19 +161,7 @@ public class Robot extends IterativeRobot {
 	   //auto pid tuning
 	   Command d_l, d_l_2, d_r, d_r_2;
 	   
-	   /*
-	    *		OLD MANUAL JOYSTICK SET UP FOR DRIVE PID
-	    *
-	   if (manualJoystick.getRawButton(1) && !prevState1Button){
-		   d_l = new DrivePIDLeft(20);
-		   d_l.start();
-	   }
-	   else if (manualJoystick.getRawButton(2) && !prevState2Button){
-		   d_l = new DrivePIDLeft(-20);
-		   d_l.start();
-	   }
-	    */
-	   
+	 
 	   
 	   //left side (
 	   if (driverLeftJoystick.getRawButton(6) && !prevStateLeft6Button){
@@ -186,24 +186,24 @@ public class Robot extends IterativeRobot {
 	   //set PID
 	   //on GAMEPAD: P:X-button, I:A-button, D:Y-button
 	   //			DECREASE^^ by simultaneously holding LB button
-	   if(manualJoystick.getRawButton(3) && !prevState3Button){
-		   p_value+= (manualJoystick.getRawButton(5)? -INCREMENT : INCREMENT);
+	   if(drivetrainPIDTuningJoystick.getRawButton(3) && !prevState3Button){
+		   drivetrain_p_value+= (drivetrainPIDTuningJoystick.getRawButton(5)? -INCREMENT : INCREMENT);
 	   }
-	   if(manualJoystick.getRawButton(1) && !prevState1Button){
-		   i_value+= (manualJoystick.getRawButton(5)? -INCREMENT : INCREMENT);
+	   if(drivetrainPIDTuningJoystick.getRawButton(1) && !prevState1Button){
+		   drivetrain_i_value+= (drivetrainPIDTuningJoystick.getRawButton(5)? -INCREMENT : INCREMENT);
 	   }
-	   if(manualJoystick.getRawButton(2) && !prevState2Button){
-		   d_value+= (manualJoystick.getRawButton(5)? -0.0001 : 0.0001);
+	   if(drivetrainPIDTuningJoystick.getRawButton(2) && !prevState2Button){
+		   drivetrain_d_value+= (drivetrainPIDTuningJoystick.getRawButton(5)? -0.0001 : 0.0001);
 	   }
 		
 	   //check to make sure none are under 0
-	   if (p_value < 0) p_value=0;
-	   if (i_value < 0) i_value=0;
-	   if (d_value < 0) d_value=0;
+	   if (drivetrain_p_value < 0) drivetrain_p_value=0;
+	   if (drivetrain_i_value < 0) drivetrain_i_value=0;
+	   if (drivetrain_d_value < 0) drivetrain_d_value=0;
 	   
 	   //update PID
-	   leftDT.getPIDController().setPID(p_value, i_value, d_value);
-	   rightDT.getPIDController().setPID(p_value, i_value, d_value);
+	   leftDT.getPIDController().setPID(drivetrain_p_value, drivetrain_i_value, drivetrain_d_value);
+	   rightDT.getPIDController().setPID(drivetrain_p_value, drivetrain_i_value, drivetrain_d_value);
 	   
 	   //for drive pid commands
 	   prevStateLeft6Button = driverLeftJoystick.getRawButton(1);
@@ -211,13 +211,13 @@ public class Robot extends IterativeRobot {
 	   prevStateRight11Button = driverRightJoystick.getRawButton(11);
 	   prevStateRight10Button = driverRightJoystick.getRawButton(10);
 	   //PID tuning
-	   prevState3Button = manualJoystick.getRawButton(3);
-	   prevState1Button = manualJoystick.getRawButton(1);
-	   prevState2Button = manualJoystick.getRawButton(2);
+	   prevState3Button = drivetrainPIDTuningJoystick.getRawButton(3);
+	   prevState1Button = drivetrainPIDTuningJoystick.getRawButton(1);
+	   prevState2Button = drivetrainPIDTuningJoystick.getRawButton(2);
 	   
-	   SmartDashboard.putNumber("P", p_value); 
-	   SmartDashboard.putNumber("I", i_value);
-	   SmartDashboard.putNumber("D", d_value);
+	   SmartDashboard.putNumber("P", drivetrain_p_value); 
+	   SmartDashboard.putNumber("I", drivetrain_i_value);
+	   SmartDashboard.putNumber("D", drivetrain_d_value);
 	   SmartDashboard.putData("Encoder Left", drivetrain.encoders[0]);
 	   SmartDashboard.putData("Encoder Right", drivetrain.encoders[1]);
 	   SmartDashboard.putBoolean("Is PID Active?", isPIDActiveLeft);

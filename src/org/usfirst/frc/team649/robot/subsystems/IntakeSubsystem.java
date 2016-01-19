@@ -12,9 +12,9 @@ public class IntakeSubsystem extends Subsystem {
 	public IntakeSubsystem(){
 		//	 FOR TESTING OF INTAKE SYSTEM
 		rollers = new Victor[3];
-		rollers[0] = new Victor(8); //horizontal spin
+		rollers[0] = new Victor(15); //horizontal spin 7
 		rollers[1] = new Victor(10); //horizontal spin
-		rollers[2] = new Victor(7); //vertical spin
+		rollers[2] = new Victor(16); //vertical spin 8
 	}
 	
 	public void setRollerSpeed(double speed){

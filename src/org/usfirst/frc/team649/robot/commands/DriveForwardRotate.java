@@ -1,6 +1,6 @@
 package org.usfirst.frc.team649.robot.commands;
 
-import org.usfirst.frc.team649.robot.subsystems.DrivetrainSubsystem;
+import org.usfirst.frc.team649.robot.subsystems.drivetrain.DrivetrainSubsystem;
 import org.usfirst.frc.team649.robot.Robot;
 
 import edu.wpi.first.wpilibj.PIDController;
