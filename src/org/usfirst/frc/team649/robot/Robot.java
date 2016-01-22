@@ -136,14 +136,38 @@ public class Robot extends IterativeRobot {
 	   shiftDriveGear(shift);
 	   
 	   //shooter
-	   powerToSet = correctForDeadZone(-operatorJoystick.getThrottle(), 0.2); //(-operatorJoystick.getThrottle() + 1.0) / 2.0);
-
-	   if (operatorJoystick.getRawButton(1)){
-		   shooter.setRollerSpeed(powerToSet);
-	   } else {
+	   //powerToSet = correctForDeadZone(-operatorJoystick.getThrottle(), 0.2); //(-operatorJoystick.getThrottle() + 1.0) / 2.0);
+	   
+	   //bang bang when holding thumb trigger
+	   if (operatorJoystick.getRawButton(2)){
+		   
+		   //1
+		   if (shooter.getRPMEinstein1() < ShooterSubsystem.TARGET_SHOOT_SPEED){
+			   shooter.rollers[0].set(1.0); //tune for different target speeds
+		   }
+		   else {
+			   shooter.rollers[0].set(0.8);
+		   }
+		   
+		   //2
+		   if (shooter.getRPMEinstein2() < ShooterSubsystem.TARGET_SHOOT_SPEED){
+			   shooter.rollers[1].set(-1.0);
+		   }
+		   else {
+			   shooter.rollers[1].set(-0.8);
+		   }
+		   
+//		   if (operatorJoystick.getRawButton(1)){
+//			   shooter.setRollerSpeed(powerToSet);
+//		   } else {
+//			   shooter.setRollerSpeed(0);
+//		   }
+	   }
+	   else{
 		   shooter.setRollerSpeed(0);
 	   }
-	   SmartDashboard.putNumber("Setpower",powerToSet);
+	   
+	   //SmartDashboard.putNumber("Setpower" ,powerToSet);
 	   //intakes
 	   if (operatorJoystick.getRawButton(11)){
 		  intake.setRollerSpeed(IntakeSubsystem.INTAKE_SPEED);
@@ -221,6 +245,10 @@ public class Robot extends IterativeRobot {
 	   SmartDashboard.putData("Encoder Left", drivetrain.encoders[0]);
 	   SmartDashboard.putData("Encoder Right", drivetrain.encoders[1]);
 	   SmartDashboard.putBoolean("Is PID Active?", isPIDActiveLeft);
+	   SmartDashboard.putNumber("Einstein 1 RPM", 60.0/shooter.photoSensor1.getPeriod());
+	   SmartDashboard.putNumber("Einstein 2 RPM", 60.0/shooter.photoSensor2.getPeriod());
+	   SmartDashboard.putNumber("Einstein Difference RPM", Math.abs(60.0/shooter.photoSensor2.getPeriod() - 60.0/shooter.photoSensor1.getPeriod()));
+	   
 	   
 	   //SmartDashboard.putNumber("Abs Encoder: getAverageValue()", shooter.absEncoder.getAverageValue());
    }
