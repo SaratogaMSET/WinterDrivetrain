@@ -33,17 +33,17 @@ public class DrivetrainSubsystem extends Subsystem {
     
     public DrivetrainSubsystem() {
     	motors = new Victor[4];
-       	motors[0] = new Victor(2);
-       	motors[1] = new Victor(3);
-       	motors[2] = new Victor(0);
-       	motors[3] = new Victor(9);
+       	motors[0] = new Victor(0);
+       	motors[1] = new Victor(2);
+       	motors[2] = new Victor(3);
+       	motors[3] = new Victor(5);
        	
 //    	encoderDriveLeftPID = this.getPIDController();
 //    	encoderDriveLeftPID.setAbsoluteTolerance(0.8);
     	//encoderDrivePID.setOutputRange(-EncoderBasedDriving.MAX_MOTOR_POWER, EncoderBasedDriving.MAX_MOTOR_POWER);
     	encoders = new Encoder[2];
-        encoders[0] = new Encoder(6,7, true);
-        encoders[1] = new Encoder(8,9, false);
+        encoders[0] = new Encoder(8,9, false);
+        encoders[1] = new Encoder(6,7, true);
         
         
         encoders[0].setDistancePerPulse(DIST_PER_PULSE_LEFT);

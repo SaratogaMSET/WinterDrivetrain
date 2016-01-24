@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import org.usfirst.frc.team649.robot.commands.DrivePIDLeft;
+import org.usfirst.frc.team649.robot.commandgroups.ShootTheShooter;
 import org.usfirst.frc.team649.robot.commands.DriveForwardRotate;
 import org.usfirst.frc.team649.robot.commands.DrivePIDRight;
 import org.usfirst.frc.team649.robot.subsystems.IntakeSubsystem;
@@ -29,6 +30,7 @@ import org.usfirst.frc.team649.robot.subsystems.shooter.ShooterSubsystem;
 public class Robot extends IterativeRobot {
 	
 	public static double DEAD_ZONE_TOLERANCE = 0.025;
+	public static double RPM_TOLERANCE = 100;
 	
 	 /**
 	  * 
@@ -45,7 +47,7 @@ public class Robot extends IterativeRobot {
 	
 	//Drivetrain
 	boolean shift;
-	DoubleSolenoid left, right; //grabberPiston2;
+	DoubleSolenoid driveSol; //grabberPiston2;
 	//PID
 	double drivetrain_p_value;
 	double drivetrain_i_value;
@@ -60,6 +62,7 @@ public class Robot extends IterativeRobot {
 	private boolean prevStateLeft7Button;
 	private boolean prevStateRight11Button;
 	private boolean prevStateRight10Button;
+	private boolean prevStateOperatorTrigger;
 	//
 	private boolean prevState3Button;
 	private boolean prevState1Button;
@@ -68,6 +71,8 @@ public class Robot extends IterativeRobot {
 	public static double INCREMENT = 0.001;
 	public static boolean isPIDActiveLeft = false;
 	public static boolean isPIDActiveRight = false;
+	
+	public static boolean canShoot = false;
 	
 	
 	double powerToSet;
@@ -103,9 +108,10 @@ public class Robot extends IterativeRobot {
     prevState3Button = false;
     prevState1Button = false;
     prevState2Button = false;
+    
+    prevStateOperatorTrigger = false;
    	
-   	left = new DoubleSolenoid(6, 7);
-   	right = new DoubleSolenoid(4,5);
+   	driveSol = new DoubleSolenoid(6, 7);
    }
    
    public void disabledPeriodic() {
@@ -143,18 +149,29 @@ public class Robot extends IterativeRobot {
 		   
 		   //1
 		   if (shooter.getRPMEinstein1() < ShooterSubsystem.TARGET_SHOOT_SPEED){
-			   shooter.rollers[0].set(1.0); //tune for different target speeds
+			   shooter.rollers[0].set(0.55); //0.55
 		   }
 		   else {
-			   shooter.rollers[0].set(0.8);
+			   shooter.rollers[0].set(0.3); //0.3
 		   }
 		   
 		   //2
 		   if (shooter.getRPMEinstein2() < ShooterSubsystem.TARGET_SHOOT_SPEED){
-			   shooter.rollers[1].set(-1.0);
+			   shooter.rollers[1].set(-0.55);
 		   }
 		   else {
-			   shooter.rollers[1].set(-0.8);
+			   shooter.rollers[1].set(-0.3);
+		   }
+		   
+		   if (Math.abs(shooter.getRPMEinstein1() - ShooterSubsystem.TARGET_SHOOT_SPEED) < RPM_TOLERANCE
+				   && Math.abs(shooter.getRPMEinstein2() - ShooterSubsystem.TARGET_SHOOT_SPEED) < RPM_TOLERANCE){
+			   canShoot = true;
+			   if (operatorJoystick.getRawButton(1) && !prevStateOperatorTrigger){
+				   new ShootTheShooter().start();
+			   }
+		   }
+		   else{
+			   canShoot = false;
 		   }
 		   
 //		   if (operatorJoystick.getRawButton(1)){
@@ -166,6 +183,12 @@ public class Robot extends IterativeRobot {
 	   else{
 		   shooter.setRollerSpeed(0);
 	   }
+	   
+	   //TEMP
+//	   if (operatorJoystick.getRawButton(1) && !prevStateOperatorTrigger){
+//			   new ShootTheShooter().start();
+//	   }
+	  
 	   
 	   //SmartDashboard.putNumber("Setpower" ,powerToSet);
 	   //intakes
@@ -179,8 +202,12 @@ public class Robot extends IterativeRobot {
 		  intake.setRollerSpeed(0);
 	   }
 	   
+	   SmartDashboard.putBoolean("Can Shoot", canShoot);
 	   SmartDashboard.putNumber("Throttle", -operatorJoystick.getThrottle());
 	   SmartDashboard.putBoolean("Trigger", operatorJoystick.getRawButton(1));
+	   
+	   SmartDashboard.putBoolean("Can shoot Einstein 1", shooter.getRPMEinstein1() < ShooterSubsystem.TARGET_SHOOT_SPEED);
+	   SmartDashboard.putBoolean("Can shoot Einstein 2", shooter.getRPMEinstein2() < ShooterSubsystem.TARGET_SHOOT_SPEED);
 	   
 	   //auto pid tuning
 	   Command d_l, d_l_2, d_r, d_r_2;
@@ -238,6 +265,8 @@ public class Robot extends IterativeRobot {
 	   prevState3Button = drivetrainPIDTuningJoystick.getRawButton(3);
 	   prevState1Button = drivetrainPIDTuningJoystick.getRawButton(1);
 	   prevState2Button = drivetrainPIDTuningJoystick.getRawButton(2);
+	   //shooter trigger
+	   prevStateOperatorTrigger = operatorJoystick.getRawButton(1);
 	   
 	   SmartDashboard.putNumber("P", drivetrain_p_value); 
 	   SmartDashboard.putNumber("I", drivetrain_i_value);
@@ -285,8 +314,7 @@ public class Robot extends IterativeRobot {
    
    public void shiftDriveGear(boolean lowSpeed) {
    	//default low
-       left.set(lowSpeed ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
-       right.set(lowSpeed ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
+       driveSol.set(lowSpeed ? DoubleSolenoid.Value.kForward : DoubleSolenoid.Value.kReverse);
        
        //for future implementation of shifting DT with solenoids and correcting encoders accordingly
 //       if (!lowSpeed && prevSolState){
