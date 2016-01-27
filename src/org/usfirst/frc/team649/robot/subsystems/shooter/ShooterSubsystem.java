@@ -25,8 +25,8 @@ public class ShooterSubsystem extends Subsystem {
 	
 	public ShooterSubsystem(){
 		rollers = new Victor[2];
-		rollers[0] = new Victor(1);   
-		rollers[1] = new Victor(4);
+		rollers[0] = new Victor(15); //1  
+		rollers[1] = new Victor(16); //4
 		
 		photoSensor1 = new Counter(1);
 		photoSensor2 = new Counter(0);
