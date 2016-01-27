@@ -19,6 +19,7 @@ import org.usfirst.frc.team649.robot.subsystems.drivetrain.DrivetrainSubsystem;
 import org.usfirst.frc.team649.robot.subsystems.drivetrain.LeftDTPID;
 import org.usfirst.frc.team649.robot.subsystems.drivetrain.RightDTPID;
 import org.usfirst.frc.team649.robot.subsystems.shooter.ShooterSubsystem;
+import org.usfirst.frc.team649.robot.util.Trajectory;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -74,6 +75,7 @@ public class Robot extends IterativeRobot {
 	
 	public static boolean canShoot = false;
 	
+	public Trajectory trajectory;
 	
 	double powerToSet;
 	
@@ -112,6 +114,8 @@ public class Robot extends IterativeRobot {
     prevStateOperatorTrigger = false;
    	
    	driveSol = new DoubleSolenoid(6, 7);
+   	
+   	trajectory = new Trajectory(0);
    }
    
    public void disabledPeriodic() {
