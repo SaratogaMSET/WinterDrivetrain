@@ -313,6 +313,7 @@ public class Robot extends IterativeRobot {
 		   d_r = new DrivePIDRight(20);
 		   d_r.start();
 	   }
+	   
 	   else if (driverRightJoystick.getRawButton(10) && !prevStateRight10Button){
 		   d_r_2 = new DrivePIDRight(-20);
 		   d_r_2.start();
