@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.command.PIDSubsystem;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import java.util.ArrayList;
 
 /**
  *
@@ -29,6 +30,8 @@ public class DrivetrainSubsystem extends Subsystem {
     public static final double AUTO_P = 0.025;
 	public static final double AUTO_I = 0.0015;
 	public static final double AUTO_D = 0.0;
+	
+	public static final double Kp = 0.01;
     
     
     public DrivetrainSubsystem() {
@@ -73,6 +76,9 @@ public class DrivetrainSubsystem extends Subsystem {
         for (; i < motors.length; i++) {
             motors[i].set(-right);
         }
+        
+        SmartDashboard.putNumber("DriveMotorLeft", left);
+        SmartDashboard.putNumber("DriveMotorRight", right);
     }
     
     public double getDistanceDTLeft() {
@@ -102,6 +108,7 @@ public class DrivetrainSubsystem extends Subsystem {
         // Set the default command for a subsystem here.
         //setDefaultCommand(new MySpecialCommand());
     }
+    
     
 //    public PIDController getGyroPIDControler() {
 //    	return encoderTurnPID;

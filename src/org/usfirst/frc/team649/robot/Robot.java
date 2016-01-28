@@ -4,6 +4,7 @@ package org.usfirst.frc.team649.robot;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -14,12 +15,19 @@ import org.usfirst.frc.team649.robot.commands.DrivePIDLeft;
 import org.usfirst.frc.team649.robot.commandgroups.ShootTheShooter;
 import org.usfirst.frc.team649.robot.commands.DriveForwardRotate;
 import org.usfirst.frc.team649.robot.commands.DrivePIDRight;
+import org.usfirst.frc.team649.robot.commands.MatchAutoDrive;
 import org.usfirst.frc.team649.robot.subsystems.IntakeSubsystem;
+import org.usfirst.frc.team649.robot.subsystems.drivetrain.AutonomousSequences;
 import org.usfirst.frc.team649.robot.subsystems.drivetrain.DrivetrainSubsystem;
 import org.usfirst.frc.team649.robot.subsystems.drivetrain.LeftDTPID;
 import org.usfirst.frc.team649.robot.subsystems.drivetrain.RightDTPID;
 import org.usfirst.frc.team649.robot.subsystems.shooter.ShooterSubsystem;
 import org.usfirst.frc.team649.robot.util.Trajectory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.OutputStream;
+import java.util.ArrayList;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -32,6 +40,11 @@ public class Robot extends IterativeRobot {
 	
 	public static double DEAD_ZONE_TOLERANCE = 0.025;
 	public static double RPM_TOLERANCE = 100;
+	public static ArrayList <ArrayList<Double>> log;
+	
+	public static Timer timer;
+	
+	public static FileWriter writer; 
 	
 	 /**
 	  * 
@@ -86,18 +99,34 @@ public class Robot extends IterativeRobot {
 	
 	
    public void robotInit() {
-	drivetrain = new DrivetrainSubsystem();
-	shooter = new ShooterSubsystem();
-	intake = new IntakeSubsystem();
-	
-	leftDT = new LeftDTPID();
-	rightDT = new RightDTPID();
-	
-   	driverRightJoystick = new Joystick(0);
-   	driverLeftJoystick = new Joystick(1);
-   	operatorJoystick = new Joystick(2);
-   	drivetrainPIDTuningJoystick = new Joystick(3);
-   	shooterPIDTuningJoystick = new Joystick(4);
+		drivetrain = new DrivetrainSubsystem();
+		shooter = new ShooterSubsystem();
+		intake = new IntakeSubsystem();
+		
+		leftDT = new LeftDTPID();
+		rightDT = new RightDTPID();
+		
+	   	driverRightJoystick = new Joystick(0);
+	   	driverLeftJoystick = new Joystick(1);
+	   	operatorJoystick = new Joystick(2);
+	   	drivetrainPIDTuningJoystick = new Joystick(3);
+	   	shooterPIDTuningJoystick = new Joystick(4);
+	   	
+	   	drivetrain_p_value = leftDT.getPIDController().getP();
+	   	drivetrain_i_value = leftDT.getPIDController().getI();
+	   	drivetrain_d_value = leftDT.getPIDController().getD();
+	   	
+	   	prevStateLeft6Button = false;
+	    prevStateLeft7Button = false;
+	    prevStateRight11Button = false;
+	    prevStateRight10Button = false;
+	    prevState3Button = false;
+	    prevState1Button = false;
+	    prevState2Button = false;
+	    
+	    prevStateOperatorTrigger = false;
+	   	
+	   	driveSol = new DoubleSolenoid(6, 7);
    	
    	drivetrain_p_value = leftDT.getPIDController().getP();
    	drivetrain_i_value = leftDT.getPIDController().getI();
@@ -116,11 +145,22 @@ public class Robot extends IterativeRobot {
    	driveSol = new DoubleSolenoid(6, 7);
    	
    	trajectory = new Trajectory(0);
+   	log = new ArrayList< ArrayList<Double>>();
    }
    
    public void disabledPeriodic() {
 		Scheduler.getInstance().run();
+		
+		new DrivePIDLeft(0).start();
+		new DrivePIDRight(0).start();
 	}
+   
+   public void autonomousInit(){
+	   Command testAuto = new MatchAutoDrive(AutonomousSequences.p_test);
+	   testAuto.start();
+	   
+	   
+   }
    
    /**
     * This function is called periodically during autonomous
@@ -132,6 +172,25 @@ public class Robot extends IterativeRobot {
 
    public void teleopInit(){
 	   drivetrain.resetEncoders();
+	   
+	   log = new ArrayList< ArrayList<Double>>();
+	   
+	   timer = new Timer();
+	   timer.reset();
+	   timer.start();
+	   
+	   new DrivePIDLeft(0).start();
+	   new DrivePIDRight(0).start();
+	   
+	   try{
+		   File f = new File("output.txt");
+		   writer = new FileWriter(f);
+		   
+		   writer.write("CRAP TO REMEMBER FOR LATER");
+	   }
+	   catch (Exception e){
+		   System.out.println(e.getMessage());
+	   }
    }
    /**
     * This function is called periodically during operator control
@@ -139,11 +198,32 @@ public class Robot extends IterativeRobot {
    public void teleopPeriodic() {
 	   Scheduler.getInstance().run();
 	   
+	   
+	   //DT
 	   shift = driverRightJoystick.getRawButton(1) || driverLeftJoystick.getRawButton(1);
 	   if (!(isPIDActiveLeft || isPIDActiveRight) ){
 		   new DriveForwardRotate(getDriveForward(), getDriveRotation()).start();
 	   }
 	   shiftDriveGear(shift);
+	   
+	   //LOGGING
+	   try{
+		   
+		   writer.write(timer.get() + ", " + drivetrain.motors[0].get() + ", " + drivetrain.motors[1].get());
+		   //writer.close();
+	   }
+	   catch (Exception e){
+		   System.out.println(e.getMessage());
+	   }
+	   
+	   ArrayList<Double> temp = new ArrayList<Double>(5);
+	   temp.add(timer.get());
+	   temp.add(drivetrain.motors[0].get());
+	   temp.add(drivetrain.motors[1].get());
+	   temp.add(drivetrain.getDistanceDTLeft());
+	   temp.add(drivetrain.getDistanceDTRight());
+	   
+	   log.add(temp);
 	   
 	   //shooter
 	   //powerToSet = correctForDeadZone(-operatorJoystick.getThrottle(), 0.2); //(-operatorJoystick.getThrottle() + 1.0) / 2.0);
@@ -282,8 +362,27 @@ public class Robot extends IterativeRobot {
 	   SmartDashboard.putNumber("Einstein 2 RPM", 60.0/shooter.photoSensor2.getPeriod());
 	   SmartDashboard.putNumber("Einstein Difference RPM", Math.abs(60.0/shooter.photoSensor2.getPeriod() - 60.0/shooter.photoSensor1.getPeriod()));
 	   
-	   
+	   //System.out.println("Log working, size: " + log.size());
 	   //SmartDashboard.putNumber("Abs Encoder: getAverageValue()", shooter.absEncoder.getAverageValue());
+   }
+   
+   public void disabledInit(){
+	   new DrivePIDLeft(0).start();
+	   new DrivePIDRight(0).start();
+	   
+	   try{
+		   writer.close();
+	   }
+	   catch(Exception e){
+		   
+	   }
+	   
+	   //LOG printer
+	   System.out.println("STARTING LOG: Time, MotorLeft, MotorRight ");
+	   for (int i = 0; i < log.size(); i++){
+		   ArrayList<Double> d = log.get(i);
+		   System.out.println("BEGINNING_TAG " + d.get(0) + ", " + d.get(1) + ", " + d.get(2) + ", " + d.get(3) + ", " + d.get(4) + " ENDING_TAG");
+	   }
    }
    
    /**
