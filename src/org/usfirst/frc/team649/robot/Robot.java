@@ -155,6 +155,8 @@ public class Robot extends IterativeRobot {
 		new DrivePIDRight(0).start();
 	}
    
+   
+   
    public void autonomousInit(){
 	   Command testAuto = new MatchAutoDrive(AutonomousSequences.p_test);
 	   testAuto.start();
@@ -307,7 +309,6 @@ public class Robot extends IterativeRobot {
 		   d_l_2 = new DrivePIDLeft(-20);
 		   d_l_2.start();
 	   }
-	   
 	   //right side
 	   if (driverRightJoystick.getRawButton(11) && !prevStateRight11Button){
 		   d_r = new DrivePIDRight(20);
